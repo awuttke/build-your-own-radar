@@ -1,0 +1,30 @@
+[
+    {
+        "name": "Java",
+        "ring": "Adapt",
+        "isNew": "false",
+        "quadrant": "Language",
+        "description": "The language of choice"
+    },
+    {
+        "name": "Gradle",
+        "ring": "evaluate",
+        "isNew": "true",
+        "quadrant": "Tools",
+        "description": "The build tool of choice"
+    },
+    {
+        "name": "Confluence",
+        "ring": "Adaüt",
+        "isNew": "false",
+        "quadrant": "Documentation",
+        "description": "The documentation tool of choice"
+    },
+    {
+        "name": "OSGi",
+        "ring": "adapt",
+        "isNew": "true",
+        "quadrant": "platforms",
+        "description": "The platform of choice"
+    }
+]

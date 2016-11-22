@@ -20,20 +20,11 @@ const SheetValidator = require('./sheetValidator');
 const ExceptionMessages = require('./exceptionMessages');
 
 
-const GoogleSheet = function (sheetId, sheetName) {
+const GoogleSheet = function (data) {
     var self = {};
 
     self.build = function () {
-        try {
-            var sheetValidator = new SheetValidator(sheetId);
-            sheetValidator.verifySheet();
-
-            Tabletop.init({
-                key: sheetId,
-                callback: createRadar
-            });
-        } catch (exception) {
-            displayErrorMessage(exception);
+       createRadar(data);
         }
 
 
@@ -74,38 +65,6 @@ const GoogleSheet = function (sheetId, sheetName) {
                 contentValidator.verifyHeaders();
 
                 var all = tabletop.sheets(sheetName).all();
-                var blips = _.map(all, new InputSanitizer().sanitize);
-
-                document.title = tabletop.googleSheetName;
-                d3.selectAll(".loading").remove();
-
-                var rings = _.map(_.uniqBy(blips, 'ring'), 'ring');
-                var ringMap = {};
-                var maxRings = 4;
-
-                _.each(rings, function (ringName, i) {
-                    if (i == maxRings) {
-                        throw new MalformedDataError(ExceptionMessages.TOO_MANY_RINGS);
-                    }
-                    ringMap[ringName] = new Ring(ringName, i);
-                });
-
-                var quadrants = {};
-                _.each(blips, function (blip) {
-                    if (!quadrants[blip.quadrant]) {
-                        quadrants[blip.quadrant] = new Quadrant(_.capitalize(blip.quadrant));
-                    }
-                    quadrants[blip.quadrant].add(new Blip(blip.name, ringMap[blip.ring], blip.isNew.toLowerCase() === 'true', blip.topic, blip.description))
-                });
-
-                var radar = new Radar();
-                _.each(quadrants, function (quadrant) {
-                    radar.addQuadrant(quadrant)
-                });
-
-                var size = (window.innerHeight - 133) < 620 ? 620 : window.innerHeight - 133;
-
-                new GraphingRadar(size, radar).init().plot();
 
             } catch (exception) {
                 displayErrorMessage(exception);
@@ -113,7 +72,13 @@ const GoogleSheet = function (sheetId, sheetName) {
         }
     };
 
-    self.init = function () {
+    return self;
+};
+
+const JsonRadar = function () {
+    var self = {};
+
+    self.build = function (data) {
         var content = d3.select('body')
             .append('div')
             .attr('class', 'loading')
@@ -125,60 +90,42 @@ const GoogleSheet = function (sheetId, sheetName) {
         plotLogo(content);
 
         var bannerText = '<h1>Building your radar...</h1><p>Your Technology Radar will be available in just a few seconds</p>';
+
         plotBanner(content, bannerText);
         plotFooter(content);
 
+        var blips = _.map(data, new InputSanitizer().sanitize);
 
-        return self;
-    };
+        document.title = "Radar Name";
+        d3.selectAll(".loading").remove();
 
-    return self;
-};
+        var rings = _.map(_.uniqBy(blips, 'ring'), 'ring');
+        var ringMap = {};
+        var maxRings = 4;
 
-var QueryParams = function (queryString) {
-    var decode = function (s) {
-        return decodeURIComponent(s.replace(/\+/g, " "));
-    };
+        _.each(rings, function (ringName, i) {
+            if (i == maxRings) {
+                throw new MalformedDataError(ExceptionMessages.TOO_MANY_RINGS);
+            }
+            ringMap[ringName] = new Ring(ringName, i);
+        });
 
-    var search = /([^&=]+)=?([^&]*)/g;
+        var quadrants = {};
+        _.each(blips, function (blip) {
+            if (!quadrants[blip.quadrant]) {
+                quadrants[blip.quadrant] = new Quadrant(_.capitalize(blip.quadrant));
+            }
+            quadrants[blip.quadrant].add(new Blip(blip.name, ringMap[blip.ring], blip.isNew.toLowerCase() === 'true', blip.topic, blip.description))
+        });
 
-    var queryParams = {};
-    var match;
-    while (match = search.exec(queryString))
-        queryParams[decode(match[1])] = decode(match[2]);
+        var radar = new Radar();
+        _.each(quadrants, function (quadrant) {
+            radar.addQuadrant(quadrant)
+        });
 
-    return queryParams
-};
+        var size = (window.innerHeight - 133) < 620 ? 620 : window.innerHeight - 133;
 
-
-const GoogleSheetInput = function () {
-    var self = {};
-
-    self.build = function () {
-        var queryParams = QueryParams(window.location.search.substring(1));
-
-        if (queryParams.sheetId) {
-            var sheet = GoogleSheet(queryParams.sheetId, queryParams.sheetName);
-            sheet.init().build();
-        } else {
-            var content = d3.select('body')
-                .append('div')
-                .attr('class', 'input-sheet');
-
-            set_document_title();
-
-            plotLogo(content);
-
-            var bannerText = '<h1>Build your own radar</h1><p>Once you\'ve <a href ="https://info.thoughtworks.com/visualize-your-tech-strategy.html">created your Radar</a>, you can use this service' +
-                ' to generate an <br />interactive version of your Technology Radar. Not sure how? <a href ="https://info.thoughtworks.com/visualize-your-tech-strategy-guide.html">Read this first.</a></p>';
-
-            plotBanner(content, bannerText);
-
-            plotForm(content);
-
-            plotFooter(content);
-
-        }
+        new GraphingRadar(size, radar).init().plot();    
     };
 
     return self;
@@ -205,16 +152,12 @@ function plotFooter(content) {
         + 'By using this service you agree to <a href="https://info.thoughtworks.com/visualize-your-tech-strategy-terms-of-service.html">ThoughtWorks\' terms of use</a>. '
         + 'You also agree to our <a href="https://www.thoughtworks.com/privacy-policy">privacy policy</a>, which describes how we will gather, use and protect any personal data contained in your public Google Sheet. '
         + 'This software is <a href="https://github.com/thoughtworks/build-your-own-radar">open source</a> and available for download and self-hosting.');
-
-
-
 }
 
 function plotBanner(content, text) {
     content.append('div')
         .attr('class', 'input-sheet__banner')
         .html(text);
-
 }
 
 function plotForm(content) {
@@ -240,4 +183,4 @@ function plotForm(content) {
     form.append('p').html("<a href='https://info.thoughtworks.com/visualize-your-tech-strategy-guide.html#faq'>Need help?</a>");
 }
 
-module.exports = GoogleSheetInput;
+module.exports = JsonRadar;

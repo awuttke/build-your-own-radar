@@ -5,6 +5,6 @@ require('./images/tw-logo.png');
 require('./images/favicon.ico');
 require('./images/radar_legend.png');
 
-const GoogleSheetInput = require('./util/factory');
+const JsonRadar = require('./util/factory');
 
-GoogleSheetInput().build();
+JsonRadar().build(require('./data.json'));
