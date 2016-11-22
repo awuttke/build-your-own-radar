@@ -19,66 +19,10 @@ const ContentValidator = require('./contentValidator');
 const SheetValidator = require('./sheetValidator');
 const ExceptionMessages = require('./exceptionMessages');
 
-
-const GoogleSheet = function (data) {
-    var self = {};
-
-    self.build = function () {
-       createRadar(data);
-        }
-
-
-        function displayErrorMessage(exception) {
-            d3.selectAll(".loading").remove();
-            var message = 'Oops! It seems like there are some problems with loading your data. ';
-
-            if (exception instanceof MalformedDataError) {
-                message = message.concat(exception.message);
-            } else if (exception instanceof SheetNotFoundError) {
-                message = exception.message;
-            } else {
-                console.error(exception);
-            }
-
-            message = message.concat('<br/>', 'Please check <a href="https://info.thoughtworks.com/visualize-your-tech-strategy-guide.html#faq">FAQs</a> for possible solutions.');
-
-            d3.select('body')
-                .append('div')
-                .attr('class', 'error-container')
-                .append('div')
-                .attr('class', 'error-container__message')
-                .append('p')
-                .html(message);
-        }
-
-        function createRadar(sheets, tabletop) {
-
-            try {
-
-                if (!sheetName) {
-                    sheetName = Object.keys(sheets)[0];
-                }
-                var columnNames = tabletop.sheets(sheetName).column_names;
-
-                var contentValidator = new ContentValidator(columnNames);
-                contentValidator.verifyContent();
-                contentValidator.verifyHeaders();
-
-                var all = tabletop.sheets(sheetName).all();
-
-            } catch (exception) {
-                displayErrorMessage(exception);
-            }
-        }
-    };
-
-    return self;
-};
-
 const JsonRadar = function () {
     var self = {};
 
-    self.build = function (data) {
+    self.build = function (data, title) {
         var content = d3.select('body')
             .append('div')
             .attr('class', 'loading')
@@ -96,7 +40,7 @@ const JsonRadar = function () {
 
         var blips = _.map(data, new InputSanitizer().sanitize);
 
-        document.title = "Radar Name";
+        document.title = title;
         d3.selectAll(".loading").remove();
 
         var rings = _.map(_.uniqBy(blips, 'ring'), 'ring');
