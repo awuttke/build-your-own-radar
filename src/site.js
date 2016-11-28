@@ -7,4 +7,5 @@ require('./images/radar_legend.png');
 
 const JsonRadar = require('./util/factory');
 
-JsonRadar().build(require('./data.json'), "Title");
+const project = "demo"
+JsonRadar().build(require('./data/' + project +'.json'), project + " Technology Radar");
